@@ -17,8 +17,8 @@ def emdist(h1, h2, bin_dist):
     '''
     Calculate earth mover's distance between 2 histograms.
 
-    :param h1: a 1-D numpy array representing a histogram with the bin values used to make bin_hist
-    :param h2: a 1-D numpy array representing a histogram with the bin values used to make bin_hist
+    :param h1: a 1-D numpy array representing a histogram with the bin values used to make bin_dist
+    :param h2: a 1-D numpy array representing a histogram with the bin values used to make bin_dist
     :param bin_dist: output from make_bin_dist(bin_vals)
     :return: a scalar value that is the earth mover's distance between normalized h1 and h2
     '''
@@ -54,15 +54,13 @@ def bestcontrol(inputstates, data, hmin, hmax, bin_dist):
 
 
 def calculate_partitions(N):
-    m = int(N/2)
+    # This only works for even N.
     partitions = []
-    for k in range(m, N+1):
+    for k in range(int(N/2)+1):
         combs = [c for c in itertools.combinations(range(N), k)]
-        if k == m:
-            # there is double-counting of partitions at the median value
-            partitions.extend(combs[:len(combs)/2])
-        else:
-            partitions.extend(combs)
+        partitions.extend(combs)
+    # there is double-counting of partitions at the median value
+    partitions = partitions[:-int(len(combs)/2)]
     return partitions
 
 
@@ -72,6 +70,13 @@ def make_truth_tables(N, partitions):
         truthtables.append([0 if a in p else 1 for a in range(N)])
         truthtables.append([1 if a in p else 0 for a in range(N)])
     return truthtables
+
+
+def make_sim_dict(data,bin_vals):
+    inputstates = [k for k in data]
+    keys = itertools.product(inputstates,inputstates)
+    sim_dict = {k : similarity(emdist(data[k[0]],data[k[1]],make_bin_dist(bin_vals))) for k in keys}
+    return sim_dict
 
 
 def rank_by_median_similarity(data):
