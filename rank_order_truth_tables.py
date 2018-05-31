@@ -51,17 +51,6 @@ def make_graph(data,bin_vals):
     return graph
 
 
-def mean_hist(hist,bin_vals):
-    '''
-    Return the mean of a histogram.
-
-    :param hist: an iterable containing the counts in each bin
-    :param bin_vals: an iterable containing a representative value for each bin
-    :return: mean value of the histogram
-    '''
-    return sum([x*h for (x,h) in zip(bin_vals,hist)]) / float(sum(hist))
-
-
 def calculate_partitions(inputstates):
     '''
     Calculate all ways to partition a list into 2 nonempty sets, where the list has an even number of elements.
@@ -77,18 +66,6 @@ def calculate_partitions(inputstates):
     # there is double-counting of partitions at the median value
     partitions = partitions[:-int(len(combs)/2)]
     return partitions
-
-
-def make_truth_table(partition,inputstates,b):
-    '''
-    Return the truth table for a partition.
-
-    :param partition: an iterable containing a subset of inputstates
-    :param inputstates: a list of length N
-    :param b: 0 or 1
-    :return: a length N list of 0's and 1's representing a truth table
-    '''
-    return [(i,b) if i in partition else (i, (b + 1) % 2) for i in inputstates]
 
 
 def weight_to_part(p, graph):
@@ -127,31 +104,66 @@ def normalized_cut(partition, inputstates, graph):
     WqV = weight_to_all(set(inputstates).difference(partition),graph)
     return Wpq * (1.0/WpV + 1.0/WqV)
 
+
+def mean_hist(hist,bin_vals):
+    '''
+    Return the mean of a histogram.
+
+    :param hist: an iterable containing the counts in each bin
+    :param bin_vals: an iterable containing a representative value for each bin
+    :return: mean value of the histogram
+    '''
+    return sum([x*h for (x,h) in zip(bin_vals,hist)]) / float(sum(hist))
+
+
+def assign_0or1(partition,data,bin_vals):
+    '''
+    Figure out if a partition should be assigned 1 (higher valued collection of histograms) or 0 (lower valued)
+
+    :param partition: a list or set containing a subset of the keys in data
+    :param data: a length 2^k dictionary mapping an input state to a 1-D numpy array histogram, all defined by the same bin values
+    :param bin_vals: representative points in the bins defining the histograms in data
+    :return: 0 or 1
+    '''
+    hp = sum([h for k, h in data.items() if k in partition])
+    hq = sum([h for k, h in data.items() if k not in partition])
+    mp = mean_hist(hp, bin_vals)
+    mq = mean_hist(hq, bin_vals)
+    return 0 if mp < mq else 1
+
+
+def make_truth_table(partition,inputstates,b):
+    '''
+    Return the truth table for a partition.
+
+    :param partition: an iterable containing a subset of inputstates
+    :param inputstates: a list of length N
+    :param b: 0 or 1
+    :return: a length N list of 0's and 1's representing a truth table
+    '''
+    return tuple([(i,b) if i in partition else (i, (b + 1) % 2) for i in inputstates])
+
+
 def rank_nonconstant_tables(data,bin_vals):
     '''
     Return scored nonconstant truth tables.
 
     :param data: a length 2^k dictionary mapping an input state to a 1-D numpy array histogram, all defined by the same bin values
     :param bin_vals: representative points in the bins defining the histograms in data
-    :return: dictionary of real values keyed by truth tables
+    :return: list of tuples of a real valued normalized cut score with its associated truth table
     '''
     graph = make_graph(data,bin_vals)
     inputstates = [k for k in data]
     partitions = calculate_partitions(inputstates)
-    scores = {}
+    scores = []
     for p in partitions:
-        hp = sum( [ h for k,h in data.items() if k in p ] )
-        hq = sum( [ h for k,h in data.items() if k not in p ] )
-        mp = mean_hist(hp,bin_vals)
-        mq = mean_hist(hq,bin_vals)
-        b = 0 if mp < mq else 1
-        truthtable = make_truth_table(p,inputstates,b)
-        scores.update( { truthtable : normalized_cut(p, inputstates, graph) } )
-    return scores
+        truthtable = make_truth_table(p,inputstates,assign_0or1(p,data,bin_vals))
+        scores.append( zip( normalized_cut(p, inputstates, graph), truthtable ) )
+    return sorted(scores)
 
 
 def print_scores(scores):
-    for tt,ns in scores.items():
+    for ns,tt in scores:
         print(ns)
         print("\n")
         for t in tt:
