@@ -45,7 +45,7 @@ def make_graph(data,bin_vals):
     '''
     inputstates = [k for k in data]
     graph = {}
-    for t,i in enumerate(inputstates[-1]):
+    for t,i in enumerate(inputstates[:-1]):
         for j in inputstates[t+1:]:
             graph.update( {(i,j) : similarity(emdist(data[i],data[j],bin_vals))} )
     return graph
@@ -60,7 +60,7 @@ def calculate_partitions(inputstates):
     '''
     N = len(inputstates)
     partitions = []
-    for k in range(int(N/2)+1):
+    for k in range(1,int(N/2)+1):
         combs = [c for c in itertools.combinations(inputstates, k)]
         partitions.extend(combs)
     # there is double-counting of partitions at the median value
@@ -87,7 +87,7 @@ def weight_to_all(p, graph):
     :param graph: the similarity values for the inputstates graph
     :return: a scalar value
     '''
-    return sum( [ v for (i,j),v in graph.items() if i in p ] )
+    return sum( [ v for (i,j),v in graph.items() if (i in p) or (j in p) ] )
 
 
 def normalized_cut(partition, inputstates, graph):
@@ -129,6 +129,10 @@ def assign_0or1(partition,data,bin_vals):
     hq = sum([h for k, h in data.items() if k not in partition])
     mp = mean_hist(hp, bin_vals)
     mq = mean_hist(hq, bin_vals)
+    # hp = [mean_hist(h,bin_vals) for k,h in data.items() if k in partition]
+    # hq = [mean_hist(h,bin_vals) for k,h in data.items() if k not in partition]
+    # mp  = sum(hp) / len(hp)
+    # mq  = sum(hq) / len(hq)
     return 0 if mp < mq else 1
 
 
@@ -144,9 +148,9 @@ def make_truth_table(partition,inputstates,b):
     return tuple([(i,b) if i in partition else (i, (b + 1) % 2) for i in inputstates])
 
 
-def rank_nonconstant_tables(data,bin_vals):
+def rank_noncst_tables(data,bin_vals):
     '''
-    Return scored nonconstant truth tables.
+    Return scored non-constant truth tables.
 
     :param data: a length 2^k dictionary mapping an input state to a 1-D numpy array histogram, all defined by the same bin values
     :param bin_vals: representative points in the bins defining the histograms in data
@@ -158,7 +162,7 @@ def rank_nonconstant_tables(data,bin_vals):
     scores = []
     for p in partitions:
         truthtable = make_truth_table(p,inputstates,assign_0or1(p,data,bin_vals))
-        scores.append( zip( normalized_cut(p, inputstates, graph), truthtable ) )
+        scores.append( ( normalized_cut(p, inputstates, graph), truthtable ) )
     return sorted(scores)
 
 
@@ -170,5 +174,32 @@ def print_scores(scores):
             print(t)
         print("\n")
 
+
 def assess_cst_truthtable():
     pass
+
+
+def test():
+    bin_vals = np.array([float(r) for r in range(12)])
+    h1 = np.array([0., 1., 3., 5., 2., 0., 0., 0., 0., 0., 0., 0.])
+    h2 = np.array([0., 0., 0., 0., 0., 0., 0., 0., 7., 3., 2., 0.])
+    h3 = np.array([0., 0., 0., 0., 0., 0., 0., 2., 4., 1., 1., 0.])
+    h4 = np.array([0., 0., 0., 0., 1., 1., 2., 8., 3., 0., 0., 0.])
+    data = {"00" : h1, "01": h2, "10" : h3, "11" : h4}
+    # desired table = 0 1 1 1
+    print("\nTest 1: desired table 0 1 1 1, good data\n")
+    scores = rank_noncst_tables(data,bin_vals)
+    print_scores(scores)
+
+    h1 = np.array([1., 5., 6., 2., 0., 0., 0., 0., 0., 0., 0., 0.])
+    h2 = np.array([0., 2., 5., 2., 1., 0., 0., 0., 0., 0., 0., 0.])
+    h3 = np.array([0., 0., 0., 1., 3., 7., 2., 1., 0., 0., 0., 0.])
+    h4 = np.array([0., 0., 0., 0., 0., 0., 2., 4., 5., 1., 0., 0.])
+    data = {"00" : h1, "01": h2, "10" : h3, "11" : h4}
+    # desired table = 0 0 1 1
+    print("\nTest 2: desired table 0 0 1 1, with state 10 ambiguous\n")
+    scores = rank_noncst_tables(data,bin_vals)
+    print_scores(scores)
+
+if __name__ == "__main__":
+    test()
