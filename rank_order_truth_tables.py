@@ -143,9 +143,9 @@ def make_truth_table(partition,inputstates,b):
     :param partition: an iterable containing a subset of inputstates
     :param inputstates: a list of length N
     :param b: 0 or 1
-    :return: a length N list of 0's and 1's representing a truth table
+    :return: a dictionary of input states keying Boolean values
     '''
-    return tuple([(i,b) if i in partition else (i, (b + 1) % 2) for i in inputstates])
+    return dict([(i,b) if i in partition else (i, (b + 1) % 2) for i in inputstates])
 
 
 def rank_noncst_tables(data,bin_vals):
@@ -163,15 +163,15 @@ def rank_noncst_tables(data,bin_vals):
     for p in partitions:
         truthtable = make_truth_table(p,inputstates,assign_0or1(p,data,bin_vals))
         scores.append( ( normalized_cut(p, inputstates, graph), truthtable ) )
-    return sorted(scores)
+    return sorted(scores, key=lambda x : x[0])
 
 
 def print_scores(scores):
     for ns,tt in scores:
         print(ns)
         print("\n")
-        for t in tt:
-            print(t)
+        for t,v in tt.items():
+            print("{} : {}".format(t,v))
         print("\n")
 
 
@@ -200,6 +200,7 @@ def test():
     print("\nTest 2: desired table 0 0 1 1, with state 10 ambiguous\n")
     scores = rank_noncst_tables(data,bin_vals)
     print_scores(scores)
+
 
 if __name__ == "__main__":
     test()
