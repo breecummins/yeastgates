@@ -1,5 +1,5 @@
-import sys
-sys.path.append('/home/jupyter/tacc-work/jupyter_packages/lib/python3.6/site-packages')
+# import sys
+# sys.path.append('/home/jupyter/tacc-work/jupyter_packages/lib/python3.6/site-packages')
 import DSGRN, graphviz
 import progressbar, json, subprocess
 
@@ -28,7 +28,7 @@ def get_matching_truthtables(parametergraph,truthtables,N):
     bar.finish()
     return params
 
-def results(net_str,truthtables,displaygraph=False):
+def results(net_str,circuit,truthtables,displaygraph=False):
     datetime = subprocess.check_output(['date +%Y_%m_%d_%H_%M_%S'], shell=True).decode(sys.stdout.encoding).strip()
     # truth tables is list of dictionaries
     network = DSGRN.Network()
@@ -51,5 +51,5 @@ def results(net_str,truthtables,displaygraph=False):
         print("Parameters with specified truth table: {}/{} = {:.2f}%".format(l,np,l/np*100))
     D = {"network" : net_str}
     D.update( { k : t for k,t in enumerate(truthtables)} )
-    json.dump(D, open('metadata{}.json'.format(datetime),'w'))
-    json.dump(params, open('params{}.json'.format(datetime),'w'))
+    json.dump(D, open('metadata{}_{}.json'.format(datetime,circuit),'w'))
+    json.dump(params, open('params{}_{}.json'.format(datetime,circuit),'w'))

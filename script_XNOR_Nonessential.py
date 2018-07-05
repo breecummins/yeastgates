@@ -1,14 +1,14 @@
 from yeastgatemodule import results
 
-# XOR gate
-with open("XOR.txt",'r') as f:
+# XNOR gate
+with open("XNOR.txt",'r') as f:
     net_str = f.read()
 
 desiredtt = {
-    "state00" : {"s1":[0,0],"s2":[0,0],"GFP":[0,0]},
-    "state01" : {"s1":[0,0],"s2":[3,3],"GFP":[1,1]},
-    "state10" : {"s1":[3,3],"s2":[0,0],"GFP":[1,1]},
-    "state11" : {"s1":[3,3],"s2":[3,3],"GFP":[0,0]}
+    "state00" : {"s1":[0,0],"s2":[0,0],"GFP":[1,1]},
+    "state01" : {"s1":[0,0],"s2":[3,3],"GFP":[0,0]},
+    "state10" : {"s1":[3,3],"s2":[0,0],"GFP":[0,0]},
+    "state11" : {"s1":[3,3],"s2":[3,3],"GFP":[1,1]}
 }
 
 fail1 = {
@@ -55,10 +55,10 @@ fail6 = {
 }
 
 fail7 = {
-    "state00" : {"s1":[0,0],"s2":[0,0],"GFP":[1,1]},
-    "state01" : {"s1":[0,0],"s2":[3,3],"GFP":[0,0]},
-    "state10" : {"s1":[3,3],"s2":[0,0],"GFP":[0,0]},
-    "state11" : {"s1":[3,3],"s2":[3,3],"GFP":[1,1]}
+    "state00" : {"s1":[0,0],"s2":[0,0],"GFP":[0,0]},
+    "state01" : {"s1":[0,0],"s2":[3,3],"GFP":[1,1]},
+    "state10" : {"s1":[3,3],"s2":[0,0],"GFP":[1,1]},
+    "state11" : {"s1":[3,3],"s2":[3,3],"GFP":[0,0]}
 }
 
 fail8 = {
@@ -117,4 +117,4 @@ fail15 = {
     "state11" : {"s1":[3,3],"s2":[3,3],"GFP":[1,1]}
 }
 
-results(net_str,"XOR",[desiredtt, fail1, fail2, fail3, fail4, fail5, fail6, fail7, fail8, fail9, fail10, fail11, fail12, fail13, fail14, fail15])
+results(net_str,"XNOR",[desiredtt, fail1, fail2, fail3, fail4, fail5, fail6, fail7, fail8, fail9, fail10, fail11, fail12, fail13, fail14, fail15])
