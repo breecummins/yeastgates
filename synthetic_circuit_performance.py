@@ -1,4 +1,5 @@
 from rank_order_truth_tables import *
+from math import isnan
 import numpy as np
 import ast,time,sys,json
 import matplotlib as mpl
@@ -36,6 +37,11 @@ def getinputstate(name_str):
         if i in name_str:
             return i
     return None
+
+def printfile(fname):
+    fn = fname.split('/')
+    N = len(fn) // 2 
+    print('/'.join(fn[:N])+'/\n'+'/'.join(fn[N:]))
 
 def parseoutput(f,underflow_skip=2,truncate_ind=1):    
     out = {}
@@ -85,10 +91,11 @@ def do_all(fname, good_sep_param, print_reps=True,make_figs=True,gates=["OR","NO
         out, bin_vals = parseoutput(f)
         circuits = list(set([tup[0] for rep in out for tup in out[rep]]))
         if len(circuits) > 1:
+            printfile(fname)
             print(circuits)
             raise ValueError("Input file has multiple circuits. Inspect for parsing.")
         elif circuits[0] in gates:
-            print(fname)
+            printfile(fname)
             correct = 0
             goodsets = 0
             good_sep = 0
@@ -98,15 +105,18 @@ def do_all(fname, good_sep_param, print_reps=True,make_figs=True,gates=["OR","NO
                 if circuit in gates:
                     if print_reps:
                         print((circuit,keys[0][2]))
+                    # Don't process if there are nan's
+                    if any([isnan(k[3]) for k in keys]):
+                        print("Missing data for conditions {}.".format(" ".join(k[1] for k in keys if isnan(k[3]))))
+                        continue
                     desiredtt = desired_truth_tables[circuit]
                     data = { k[1] : out[rep][k] for k in keys }
                     scores = rank_noncst_tables( data, bin_vals )
-                    if scores[0][0] > 0: #filter out nan's
-                        goodsets += 1 
-                        if scores[0][1] == desiredtt:
-                            correct += 1
-                            if scores[1][0] - scores[0][0] > good_sep_param:
-                                good_sep += 1
+                    goodsets += 1 
+                    if scores[0][1] == desiredtt:
+                        correct += 1
+                        if scores[1][0] - scores[0][0] > good_sep_param:
+                            good_sep += 1
                     if make_figs:
                         make_hists(data,bin_vals,desiredtt,rep)
                         time.sleep(0.1)
