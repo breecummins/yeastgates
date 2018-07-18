@@ -1,4 +1,4 @@
-# import sys
+import sys
 # sys.path.append('/home/jupyter/tacc-work/jupyter_packages/lib/python3.6/site-packages')
 import DSGRN, graphviz
 import progressbar, json, subprocess
