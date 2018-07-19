@@ -78,7 +78,7 @@ def do_all_queries(dbname, in1, topval1, in2, topval2, out, topvalout, print_out
     D = {"database" : dbname, "num_params" : np }
     D.update( { k : (l,t) for (k,t),l in zip(enumerate(truthtables),lengths) } )
     json.dump(D, open('summary{}_{}.json'.format(datetime,dbname[:-3]),'w'))
-    json.dump(all_matches, open('params{}_{}.json'.format(datetime,dbname[:-3]),'w'))
+    json.dump({ k : a for k,a in enumerate(all_matches)}, open('params{}_{}.json'.format(datetime,dbname[:-3]),'w'))
 
 
 
