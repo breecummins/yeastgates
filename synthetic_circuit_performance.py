@@ -85,7 +85,7 @@ def make_hists(data,bin_vals,desiredtt,rep):
     plt.show()
 
 
-def do_all(fname, good_sep_param, print_reps=True,make_figs=True,gates=["OR","NOR","AND","NAND","XOR","XNOR"],top_tables=7):
+def do_all(fname, good_sep_param, print_reps=True,print_summary=True,make_figs=True,gates=["OR","NOR","AND","NAND","XOR","XNOR"],top_tables=7):
     starttime=time.time()
     with open(fname,'r') as f:
         out, bin_vals = parseoutput(f)
@@ -123,14 +123,15 @@ def do_all(fname, good_sep_param, print_reps=True,make_figs=True,gates=["OR","NO
                     if print_reps:
                         print(rep)
                         print_scores(scores[:top_tables])
-            print((circuit,keys[0][2]))
-            if goodsets > 0:
-                print("{} correct / {} replicates = {:.2f}%, {} with good separation / {} replicates = {:.2f}%".format(correct,goodsets,float(correct)/goodsets*100,good_sep,goodsets,float(good_sep)/goodsets*100))
-            else:
-                print("No good replicates.")
-            print(time.time()-starttime)
-            print("\n")
-            print("---------------------------------------------------------------------------------")
-            print("---------------------------------------------------------------------------------")
-            print("---------------------------------------------------------------------------------")
-            print("\n")
+            if print_summary:
+                print((circuit,keys[0][2]))
+                if goodsets > 0:
+                    print("{} correct / {} replicates = {:.2f}%, {} with good separation / {} replicates = {:.2f}%".format(correct,goodsets,float(correct)/goodsets*100,good_sep,goodsets,float(good_sep)/goodsets*100))
+                else:
+                    print("No good replicates.")
+                print(time.time()-starttime)
+                print("\n")
+                print("---------------------------------------------------------------------------------")
+                print("---------------------------------------------------------------------------------")
+                print("---------------------------------------------------------------------------------")
+                print("\n")
