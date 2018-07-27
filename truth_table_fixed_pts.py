@@ -1,4 +1,4 @@
-import DSGRN,itertools,subprocess,sys,json,os,contextlib
+import DSGRN,itertools,json,os,contextlib
 
 def truth_table_constructor_2in(in1, topval1, in2, topval2, out, topvalout):
     '''
@@ -74,11 +74,13 @@ def do_all_queries(dbname, in1, topval1, in2, topval2, out, topvalout, print_out
             if l > 0:
                 print("Parameters with specified truth table: {}/{} = {:.2f}%\n".format(l, np,l/np*100))
                 print(format_truth_table(tt,in1,in2,out))
-    datetime = subprocess.check_output(['date +%Y_%m_%d_%H_%M_%S'], shell=True).decode(sys.stdout.encoding).strip()
+    sum_file = 'summary_{}.json'.format(dbname[:-3])
+    param_file = 'params_{}.json'.format(dbname[:-3])
     D = {"database" : dbname, "num_params" : np }
     D.update( { k : (l,t) for (k,t),l in zip(enumerate(truthtables),lengths) } )
-    json.dump(D, open('summary{}_{}.json'.format(datetime,dbname[:-3]),'w'))
-    json.dump({ k : a for k,a in enumerate(all_matches)}, open('params{}_{}.json'.format(datetime,dbname[:-3]),'w'))
+    json.dump(D, open(sum_file,'w'))
+    json.dump({ k : a for k,a in enumerate(all_matches)}, open(param_file,'w'))
+    return sum_file,param_file
 
 
 
