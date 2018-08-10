@@ -99,6 +99,7 @@ def do_all(fname, good_sep_param, print_reps=True,print_summary=True,make_figs=T
             correct = 0
             goodsets = 0
             good_sep = 0
+            savescores = []
             for rep, hist in out.items():
                 keys = [ tup for tup in out[rep] ]
                 circuit =  keys[0][0]
@@ -115,8 +116,11 @@ def do_all(fname, good_sep_param, print_reps=True,print_summary=True,make_figs=T
                     goodsets += 1 
                     if scores[0][1] == desiredtt:
                         correct += 1
+                        savescores.append((scores[0][0], scores[1][0] - scores[0][0],True))
                         if scores[1][0] - scores[0][0] > good_sep_param:
                             good_sep += 1
+                    else:
+                        savescores.append((scores[0][0], scores[1][0] - scores[0][0], False))
                     if make_figs:
                         make_hists(data,bin_vals,desiredtt,rep)
                         time.sleep(0.1)
@@ -135,3 +139,4 @@ def do_all(fname, good_sep_param, print_reps=True,print_summary=True,make_figs=T
                 print("---------------------------------------------------------------------------------")
                 print("---------------------------------------------------------------------------------")
                 print("\n")
+            return savescores,circuit,keys[0][2]
