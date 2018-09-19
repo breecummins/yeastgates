@@ -1,5 +1,6 @@
 import pyemd, itertools
 import numpy as np
+from pprint import pprint
 
 
 def make_bin_dist(bin_vals):
@@ -47,6 +48,7 @@ def make_graph(data,bin_vals):
     graph = {}
     for t,i in enumerate(inputstates[:-1]):
         for j in inputstates[t+1:]:
+            v = emdist(data[i],data[j],bin_vals)
             graph.update( {(i,j) : similarity(emdist(data[i],data[j],bin_vals))} )
     return graph
 
