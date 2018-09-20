@@ -86,6 +86,10 @@ def get_data_mongo(ingest_file, prefix,transform=None):
         else:
             data[d] = [(sample,channels,metadata)]  
     return data
+
+
+def get_log_values(values):
+    return [np.log10(v) for v in values]
             
 
 def get_data(mongo=True,ingest_file= "matches_biofab_nand.json", prefix="~/sd2e-community/uploads",transform=None,circuit=None):
@@ -108,7 +112,7 @@ def get_bin_centers(bin_endpoints):
     return np.asarray([a + (b-a)/2 for (a,b) in zip([0]+bin_endpoints,bin_endpoints+[2*bin_endpoints[-1] - bin_endpoints[-2]])])
         
 
-def sort_strains_into_histograms(data,bin_endpoints=list(range(250,10250,250)),media="",od=""):
+def sort_strains_into_histograms(data,bin_endpoints=list(range(0.05,7.05,0.05)),media="",od=""):
     circuits = {}
     for key,samp_list in data.items():
         for sample,channels,metadata in samp_list:
@@ -118,7 +122,7 @@ def sort_strains_into_histograms(data,bin_endpoints=list(range(250,10250,250)),m
                 md = metadata.copy()
                 md.pop("input_state")
                 md = tuple(md.items())
-                pts = list(sample.data[channels["GFP"]].values.transpose())
+                pts = get_log_values(sample.data[channels["GFP"]].values.transpose())
                 hist = bin_data(pts,bin_endpoints)
                 if md not in circuits:
                     circuits[md]  = {"00" : [], "01" : [], "10" : [], "11" : []}
@@ -138,7 +142,7 @@ def calculate_results_and_null(data,bin_endpoints=[np.log10(r) for r in range(25
 
 
 def load_circuits(fname):
-    circuitstr = json.load(open("test_circuits.json"))
+    circuitstr = json.load(open(fname))
     circuits = {}
     for metadata,vals in circuitstr.items():
         metadata = ast.literal_eval(metadata)
@@ -147,7 +151,7 @@ def load_circuits(fname):
     return circuits
 
 
-def get_results(circuits,bin_centers,num_choices=2):
+def get_results(circuits,bin_centers):
     new_circuits = {}
     for metadata,vals in circuits.items():
         md = []
@@ -168,9 +172,43 @@ def get_results(circuits,bin_centers,num_choices=2):
                 break
         separations = []
         truthtable_correct = []
-        # put itertools.product back
+        ips = []
+        for k in range(4):
+            ips.append(ip[input_states[k]])
+        for p in itertools.product(*ips):
+            d = dict(zip(input_states,list(p)))
+            scores = rank_noncst_tables(d,bin_centers)
+            separations.append(scores[1][0] - scores[0][0])
+            if scores[0][1] == desiredtt:
+                truthtable_correct.append(scores[1][0] - scores[0][0])
+        all_scores[md]['separations'].extend(separations)
+        all_scores[md]['truthtable_correct'].extend(truthtable_correct)
+    return all_scores
+
+
+def build_null_model(circuits,bin_centers,num_choices=100):
+    random_circuits = {}
+    for metadata,vals in circuits.items():
+        md = []
+        for m in metadata:
+            if m[0] not in ["rep","od"]:
+                md.append(m)
+        md = tuple(md)
+        all_inputs = [ a  for k in vals for a in vals[k] ]
+        if md not in random_circuits:
+            random_circuits[md] = all_inputs
+        else:
+            random_circuits[md].extend(all_inputs)
+    all_scores = { md : {'separations':[],'truthtable_correct':[]} for md in random_circuits}
+    for md,ip in random_circuits.items():
+        for m in md:
+            if m[0] == "circuit":
+                desiredtt = desired_truth_tables[m[1]]
+                break
+        separations = []
+        truthtable_correct = []        # put itertools.product back
         for _ in range(num_choices):
-            choice = [random.choice(ip[input_states[k]]) for k in range(4)]
+            choice = [random.choice(ip) for _ in range(4)]
             d = dict(zip(input_states,choice))
             scores = rank_noncst_tables(d,bin_centers)
             separations.append(scores[1][0] - scores[0][0])
@@ -181,18 +219,34 @@ def get_results(circuits,bin_centers,num_choices=2):
     return all_scores
 
 
-def build_null_model(circuits,bin_centers,num_choices=2):
-    pass
-
-
-if __name__ == "__main__":
-    fname = "test_circuits.json"
+def test(out=False):
+    fname = "test_circuits_biofab_SC_od3.json"
     circuits = load_circuits(fname)
     bin_endpoints =[np.log10(r) for r in range(250,10250,250)]
     bin_centers = get_bin_centers(bin_endpoints)
-    results = get_results(circuits,bin_centers)
-    print(results)
+    results={}
+    # print("Processing results...")
+    # results = get_results(circuits,bin_centers)
+    # ptcloud = results[list(results.keys())[0]]["separations"]
+    # N = len(ptcloud)
+    # print(N)
+    # print("Results calculated.")
+    from plot_fcs_files import plot_hist_from_point_cloud
+    bin_endpts = list(np.arange(0,0.0105,0.0005))
+    # print("Plotting results...")
+    # plot_hist_from_point_cloud(ptcloud,xlim=[0,0.01],ylim=[0,len(ptcloud)],bin_endpts=bin_endpts)
+    print("Building null model...")
+    N = 1296
+    nullmod = build_null_model(circuits,bin_centers,num_choices=10*N)
+    print("Null model built.")
+    print("Plotting null model...")
+    ptcloud = nullmod[list(nullmod.keys())[0]]["separations"]
+    plot_hist_from_point_cloud(ptcloud, xlim=[0, 0.01], ylim=[0, len(ptcloud)], bin_endpts=bin_endpts)
+    if out:
+        return results, nullmod
 
+if __name__ == "__main__":
+    test()
 
 
 
