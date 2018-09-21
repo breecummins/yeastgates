@@ -78,11 +78,12 @@ def plot_hist(data,xchannel="FSC",xlim=[6500,12000],ylim=[0,1400],bins=200,color
         pylab.show()
 
 
-def plot_hist_from_point_cloud(ptcloud,xlabel="",title="",bin_endpts=None,xlim=[0,0.1],ylim=[0,50],color="blue",bins=20,savefile=False):
-    if bin_endpts:
-        pylab.hist(ptcloud,bins=bin_endpts,color=color)
-    else:
-        pylab.hist(ptcloud,bins=bins,color=color)
+def plot_hist_from_point_cloud(ptclouds,xlabel="",title="",bin_endpts=None,xlim=[0,0.1],ylim=[0,50],colors=["blue"],bins=20,savefile=False):
+    for ptcloud,color in zip(ptclouds,colors):
+        if bin_endpts:
+            pylab.hist(ptcloud,bins=bin_endpts,color=color)
+        else:
+            pylab.hist(ptcloud,bins=bins,color=color)
     pylab.title(title)
     pylab.xlabel(xlabel)
     pylab.ylabel("count")
@@ -91,6 +92,3 @@ def plot_hist_from_point_cloud(ptcloud,xlabel="",title="",bin_endpts=None,xlim=[
     if savefile:
         pylab.savefig(savefile)
     pylab.show()
-
-def plot_hist_data():
-    pass

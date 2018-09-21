@@ -89,7 +89,13 @@ def get_data_mongo(ingest_file, prefix,transform=None):
 
 
 def get_log_values(values):
-    return [np.log10(v) for v in values]
+    log_vals = []
+    for v in values:
+        if v > 0:
+            log_vals.append(np.log10(v))
+        else:
+            log_vals.append(-1)
+    return log_vals
             
 
 def get_data(mongo=True,ingest_file= "matches_biofab_nand.json", prefix="~/sd2e-community/uploads",transform=None,circuit=None):
@@ -112,7 +118,7 @@ def get_bin_centers(bin_endpoints):
     return np.asarray([a + (b-a)/2 for (a,b) in zip([0]+bin_endpoints,bin_endpoints+[2*bin_endpoints[-1] - bin_endpoints[-2]])])
         
 
-def sort_strains_into_histograms(data,bin_endpoints=list(range(0.05,7.05,0.05)),media="",od=""):
+def sort_strains_into_histograms(data,bin_endpoints=list(np.arange(0.05,7.05,0.05)),media="",od=""):
     circuits = {}
     for key,samp_list in data.items():
         for sample,channels,metadata in samp_list:
@@ -220,10 +226,27 @@ def build_null_model(circuits,bin_centers,num_choices=100):
 
 
 def test(out=False):
+    from plot_fcs_files import plot_hist_from_point_cloud
     fname = "test_circuits_biofab_SC_od3.json"
     circuits = load_circuits(fname)
     bin_endpoints =[np.log10(r) for r in range(250,10250,250)]
     bin_centers = get_bin_centers(bin_endpoints)
+    new_circuits = dict(circuits)
+    for md,vals in circuits.items():
+        for k,v in vals.items():
+            new_vals=[]
+            for a in v:
+                new_vals.append(get_log_values(a))
+            new_circuits[md][k] = new_vals
+        ptclouds = []
+        for k,v in new_circuits[md]:
+            ptclouds.append(v[0])
+        colors = ["blue","blue","blue","red"]
+        plot_hist_from_point_cloud(ptclouds,bin_endpts=bin_endpoints,xlim=[0,7],colors=colors)
+    circuits = new_circuits
+
+
+
     results={}
     # print("Processing results...")
     # results = get_results(circuits,bin_centers)
@@ -231,17 +254,16 @@ def test(out=False):
     # N = len(ptcloud)
     # print(N)
     # print("Results calculated.")
-    from plot_fcs_files import plot_hist_from_point_cloud
     bin_endpts = list(np.arange(0,0.0105,0.0005))
     # print("Plotting results...")
-    # plot_hist_from_point_cloud(ptcloud,xlim=[0,0.01],ylim=[0,len(ptcloud)],bin_endpts=bin_endpts)
+    # plot_hist_from_point_cloud([ptcloud],xlim=[0,0.01],ylim=[0,len(ptcloud)],bin_endpts=bin_endpts)
     print("Building null model...")
     N = 1296
     nullmod = build_null_model(circuits,bin_centers,num_choices=10*N)
     print("Null model built.")
     print("Plotting null model...")
     ptcloud = nullmod[list(nullmod.keys())[0]]["separations"]
-    plot_hist_from_point_cloud(ptcloud, xlim=[0, 0.01], ylim=[0, len(ptcloud)], bin_endpts=bin_endpts)
+    plot_hist_from_point_cloud([ptcloud], xlim=[0, 0.01], ylim=[0, len(ptcloud)], bin_endpts=bin_endpts)
     if out:
         return results, nullmod
 
