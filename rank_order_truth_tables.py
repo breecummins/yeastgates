@@ -23,7 +23,7 @@ def emdist(h1, h2, bin_vals):
     :param bin_vals: representative points in the bins defining the histograms in data
     :return: a scalar value that is the earth mover's distance between normalized h1 and h2
     '''
-    return pyemd.emd(h1/float(sum(h1)), h2/float(sum(h2)), make_bin_dist(bin_vals))
+    return pyemd.emd(np.asarray(h1)/float(sum(h1)), np.asarray(h2)/float(sum(h2)), make_bin_dist(bin_vals))
 
 
 def similarity(dist):

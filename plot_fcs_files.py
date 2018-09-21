@@ -1,6 +1,5 @@
 import pylab
 
-
 def plot_2D_scatter(data, xchannel="GFP", ychannel="FSC", xlim=[-0.01, 7], ylim=[-0.01, 7], pool=False, savefile=False):
     '''
 
@@ -78,17 +77,41 @@ def plot_hist(data,xchannel="FSC",xlim=[6500,12000],ylim=[0,1400],bins=200,color
         pylab.show()
 
 
-def plot_hist_from_point_cloud(ptclouds,xlabel="",title="",bin_endpts=None,xlim=[0,0.1],ylim=[0,50],colors=["blue"],bins=20,savefile=False):
+def plot_hist_from_point_cloud(ptclouds,xlabel="",title="",bin_endpts=None,xlim=None,ylim=None,colors=["blue"],bins=20,savefile=False):
+    # ptclouds is list of np.arrays or lists, each for a different input condition
+    # all will be plotted in the same figure
     for ptcloud,color in zip(ptclouds,colors):
-        if bin_endpts:
-            pylab.hist(ptcloud,bins=bin_endpts,color=color)
+        if bin_endpts is not None:
+            pylab.hist(ptcloud,bins=bin_endpts,color=color,alpha=.5)
         else:
-            pylab.hist(ptcloud,bins=bins,color=color)
+            pylab.hist(ptcloud,bins=bins,color=color,alpha=.5)
     pylab.title(title)
     pylab.xlabel(xlabel)
     pylab.ylabel("count")
-    pylab.xlim(xlim)
-    pylab.ylim(ylim)
+    if xlim:
+        pylab.xlim(xlim)
+    if ylim:
+        pylab.ylim(ylim)
     if savefile:
         pylab.savefig(savefile)
     pylab.show()
+
+
+def plot_bar(x,heights,xlabel="",ylabel="counts",title="",xlim=[0,0.1],ylim=[0,50],colors=["blue"],savefile=False):
+    for h,c in zip(heights,colors):
+        pylab.hist(x, len(x), weights=h/sum(h), alpha=0.5, color=c)
+    pylab.title(title)
+    pylab.xlabel(xlabel)
+    pylab.ylabel(ylabel)
+    if xlim:
+        pylab.xlim(xlim)
+    if ylim:
+        pylab.ylim(ylim)
+    if savefile:
+        pylab.savefig(savefile)
+    pylab.show()
+
+
+
+
+
