@@ -2,6 +2,53 @@ import DSGRN,json,sqlite3
 from truth_table_fixed_pts import do_all_queries
 
 
+def dict_of_behavior(node_type,hex):
+    # node type = (num in-edges, num out-edges)
+    # behaviors = ["Design","Cellular repression","Cellular activation","Leaky repression at 1 promoter","Leaky repression at 2 promoters","Mixed effects"]
+
+    if hex == 0:
+        return "Cellular repression"
+
+    if node_type == (1,1):
+        if hex == 2:
+            return "Design"
+        elif hex == 3:
+            return "Cellular activation or leaky repression"
+    elif node_type == (2,1):
+        if hex == 8:
+            return "Design"
+        elif hex == 0x0A or 0x0C:
+            return "Cellular activation or leaky repression at one promoter"
+        elif hex == 0x0E or 0x0F:
+            return "Cellular activation or leaky repression at two promoters"
+    elif node_type == (1,2):
+        #This works only for an ACTIVATING in-edge, as for either of the input nodes to the circuit
+        if hex == 4:
+            return "Cellular repression"
+        elif hex == 5:
+            return "Mixed effects"
+        elif hex == 0x0C:
+            return "Design"
+        elif hex == 0x0D or 0x0F:
+            return "Cellular activation"
+    elif node_type not in [(1,1),(2,1),(1,2)]:
+        return "Node type {} is not implemented.".format(node_type)
+
+    return "{} is not a hex code for a {} node type.".format(hex,node_type)
+
+
+
+def NOR():
+    dbname = "NOR.db"
+    topval1 = 2
+    topval2 = 2
+    node_types = [(1,2),(1,2),(2,1)]
+    design_spec = ["C","C","8"]
+    in1 = "s1"
+    in2 = "s2"
+    return dbname, in1, topval1, in2, topval2, design_spec, node_types
+
+
 def NAND():
     dbname = "NAND.db"
     topval1 = 2
@@ -40,6 +87,18 @@ def XOR():
     in1 = "s1"
     in2 = "s2"
     return dbname, in1, topval1, in2, topval2, design_spec
+
+
+def XNOR():
+    #FIXME: Design spec is incomplete
+    dbname = "XNOR.db"
+    topval1 = 3
+    topval2 = 3
+    design_spec = ["38","38","","8","8","8"]
+    in1 = "s1"
+    in2 = "s2"
+    return dbname, in1, topval1, in2, topval2, design_spec
+
 
 
 def get_network(dbname):

@@ -110,8 +110,69 @@ def plot_bar(x,heights,xlabel="",ylabel="counts",title="",xlim=[0,0.1],ylim=[0,5
     if savefile:
         pylab.savefig(savefile)
     pylab.show()
+    
+    
+def sep_hists(results,title,scale=10,bins=50):
+    # results is the output of process_fcs_files.get_results 
+    ptcloud = [scale*r for r in results[list(results.keys())[0]]["truthtable_incorrect"]]
+    try:
+        M=max(ptcloud)
+    except:
+        M=1    
+    bin_endpts = np.linspace(0,M,bins)
+    plotff.plot_hist_from_point_cloud([ptcloud],xlim=[0,M],ylim=[0,len(ptcloud)],title=title,xlabel="incorrect separation scores * {}".format(scale),bin_endpts=bin_endpts,colors=["red"])
+
+    ptcloud = [scale*r for r in results[list(results.keys())[0]]["truthtable_correct"]]
+    try:
+        M=max(ptcloud)
+    except:
+        M=1    
+    bin_endpts = np.linspace(0,M,bins)
+    plotff.plot_hist_from_point_cloud([ptcloud],xlim=[0,M],ylim=[0,len(ptcloud)],title=title,xlabel="correct separation scores * {}".format(scale),bin_endpts=bin_endpts,colors=["green"])
 
 
 
+def plot_summaries(results,ylim=(0,0.04)):
+    # results is the output of process_fcs_files.get_results 
+    circuits = ["OR","NOR","AND","NAND","XOR","XNOR"]
+    input_states = ["00","01","10","11"]
+    SC = {}
+    Sorb = {}
+    Eth = {}
+    YEPD = {}
+    media_scores = {"SC":SC,"Sorb":Sorb,"Eth":Eth,"YEPD":YEPD}
+    for m,scores in results.items():
+        circuit = pff.getcircuit(m[1][1])
+        media = m[0][1]
+        if media == "Yeast_Extract_Peptone_Adenine_Dextrose" or media == "culture_media_4":
+            media = "YEPD"
+        elif media == "Synthetic_Complete" or media == "culture_media_5" or media == "culture_media_1":
+            media = "SC"
+        elif "thanol" in media or media == "culture_media_2":
+            media = "Eth"
+        elif "orbitol" in media or media == "culture_media_3":
+            media = "Sorb"
+        else:
+            raise ValueError("Media {} is not recognized.".format(media))
+        media_scores[media].update({circuit : scores})
+    for m,cts in media_scores.items():
+        plt.figure()
+        plt.title(m)
+        ax = plt.gca()
+        ax.set_xticks(range(6))
+        ax.set_xticklabels(circuits, fontsize=18)
+        plt.ylim(ylim)
+        for c,cor in cts.items():
+            ind = circuits.index(c)
+            seps = cor["truthtable_correct"]
+            inds = [ind]*len(seps)
+            col = "g"
+            plt.plot(inds,seps,color=col,marker="o")
+            seps = cor["truthtable_incorrect"]
+            inds = [ind]*len(seps)
+            col = "r"
+            plt.plot(inds,seps,color=col,marker="o")
+        plt.show()
+        
 
 

@@ -81,28 +81,3 @@ def do_all_queries(dbname, in1, topval1, in2, topval2, out, topvalout, print_out
     json.dump(D, open(sum_file,'w'))
     json.dump({ k : a for k,a in enumerate(all_matches)}, open(param_file,'w'))
     return sum_file,param_file
-
-
-
-# def truth_table_query_old(database, bounds):
-#     '''
-#     This class only works for fixed points with non-overlapping bounds.
-#     See DSGRN.DoubleFixedPointQuery for a technique when there are overlapping bounds.
-#     :param database: A DSGRN database.
-#     :param bounds: A list of bounds in DSGRN dictionary format.
-#     :return: a list of parameter indices with the matching truth table
-#     '''
-#     #FIXME: Add check that bounds do not overlap (they shouldn't for truth tables)
-#     tables = ["Matches{}".format(k) for k in range(len(bounds))]
-#     for name, b in zip(tables, bounds):
-#         DSGRN.Query.FixedPointTables.MatchQuery(b, name, database);
-#     make_query = "".join([" intersect select * from {}".format(n) for n in tables[1:]])
-#     c = database.conn.cursor()
-#     c.execute("create temp table Matches as select MorseGraphIndex from (select * from {}".format(tables[0]) + make_query + ") group by MorseGraphIndex;")
-#     matches = [row[0] for row in c.execute('select distinct ParameterIndex from Matches natural join Signatures;')]
-#     c.execute('drop table Matches')
-#     for name in tables:
-#         c.execute('drop table {}'.format(name))
-#     return matches
-
-
