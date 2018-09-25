@@ -4,17 +4,18 @@ from truth_table_fixed_pts import do_all_queries
 
 def dict_of_behavior(node_type,hex):
     # node type = (num in-edges, num out-edges)
-    # behaviors = ["Design","Cellular repression","Cellular activation","Leaky repression at 1 promoter","Leaky repression at 2 promoters","Mixed effects"]
 
     if hex == 0:
         return "Cellular repression"
 
     if node_type == (1,1):
+        # one repressing in-edge, one outedge
         if hex == 2:
             return "Design"
         elif hex == 3:
             return "Cellular activation or leaky repression"
     elif node_type == (2,1):
+        # two repressing in-edges, one outedge
         if hex == 8:
             return "Design"
         elif hex == 0x0A or 0x0C:
@@ -22,7 +23,7 @@ def dict_of_behavior(node_type,hex):
         elif hex == 0x0E or 0x0F:
             return "Cellular activation or leaky repression at two promoters"
     elif node_type == (1,2):
-        #This works only for an ACTIVATING in-edge, as for either of the input nodes to the circuit
+        #one ACTIVATING in-edge, 2 outedges
         if hex == 4:
             return "Cellular repression"
         elif hex == 5:
@@ -32,6 +33,7 @@ def dict_of_behavior(node_type,hex):
         elif hex == 0x0D or 0x0F:
             return "Cellular activation"
     elif node_type not in [(1,1),(2,1),(1,2)]:
+        #FIXME: need (1,3) activating in and (2,2) repressing in
         return "Node type {} is not implemented.".format(node_type)
 
     return "{} is not a hex code for a {} node type.".format(hex,node_type)
