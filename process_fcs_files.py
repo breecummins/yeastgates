@@ -148,13 +148,13 @@ def get_data(circuit,mongo=True, ingest_file="matches_biofab_nand.json", prefix=
 def bin_data(pts, bin_endpoints):
     hist = [0] * (len(bin_endpoints) + 1)
     for p in list(pts):
-        ind = sorted(bin_endpoints + [p]).index(p)
+        ind = sorted(list(bin_endpoints) + [p]).index(p)                
         hist[ind] += 1
     return hist
 
 
 def get_bin_centers(bin_endpoints):
-    return [a + (b - a) / 2 for (a, b) in zip([0] + bin_endpoints, bin_endpoints + [2 * bin_endpoints[-1] - bin_endpoints[-2]])]
+    return [a + (b - a) / 2 for (a, b) in zip([0] + list(bin_endpoints), list(bin_endpoints) + [2 * bin_endpoints[-1] - bin_endpoints[-2]])]
 
 
 def sort_strains_into_histograms(data, bin_endpoints=list(np.arange(0.05, 7.05, 0.05)), media=None, od=None):
@@ -175,7 +175,7 @@ def sort_strains_into_histograms(data, bin_endpoints=list(np.arange(0.05, 7.05, 
     return circuits
 
 
-def calculate_results_and_null(mongo=True,ingestfile="matches_biofab_all_circuits_all_media.json", prefix="~/sd2e-community/uploads", transform="hlog",bin_endpoints=[np.log10(r) for r in range(250, 10250, 250)], media=None, od=None,dumpfile=None, num_choices_res=10, num_choices_null=20, loadfile=None, circuits=["XNOR","XOR","NOR","OR","NAND","AND"],threshold=None,channel = "FSC",region="above"):
+def calculate_results_and_null(mongo=True,ingestfile="matches_biofab_all_circuits_all_media.json", prefix="~/sd2e-community/uploads", transform="hlog",bin_endpoints=[np.log10(r) for r in range(250, 10250, 250)], media=None, od=None,dumpfile="temp.json", num_choices_res=10, num_choices_null=20, loadfile=None, circuits=["XNOR","XOR","NOR","OR","NAND","AND"],threshold=None,channel = "FSC",region="above",savefile=None):
     if loadfile:
         cts = json.load(open(loadfile))
         bin_centers = cts["bin_centers"]
@@ -190,23 +190,24 @@ def calculate_results_and_null(mongo=True,ingestfile="matches_biofab_all_circuit
             h = sort_strains_into_histograms(data, bin_endpoints=bin_endpoints, media=media, od=od)
             print("Initial sort done.")
             cts[circuit] = h
-        if dumpfile:
-            cts.update({'bin_centers': bin_centers})
-            json.dump(cts, open(dumpfile, "w"))
-            cts.pop('bin_centers')
+        cts.update({'bin_centers': bin_centers})
+        json.dump(cts, open(dumpfile, "w"))
+        cts.pop('bin_centers')
     cts, bin_centers = format_circuits(cts,bin_centers)
     output = {}
     for circuit in circuits:
-        print("Processing results....")
+        print("Processing results for {}....".format(circuit))
         results = get_results(cts[circuit], bin_centers, num_choices=num_choices_res)
         print("Processing results done.")
-        print("Building null model....")
+        print("Building null model for {}....".format(circuit))
         null_model = build_null_model(cts[circuit], bin_centers, num_choices=num_choices_null)
         print("Building null model done.")
         output[circuit] = {'results':{str(k) : r for k,r in results.items()},'null_model':{str(k) : n for k,n in null_model.items()}}
-    parts = dumpfile.split('.')
-    newfile = parts[0]+"_output.json"
-    json.dump(output, open(newfile, "w"))
+    if not savefile:
+        parts = dumpfile.split('.')
+        savefile = parts[0]+"_output.json"
+    json.dump(output, open(savefile, "w"))
+    print("Output saved to {}".format(savefile))
     return output
 
 
