@@ -7,6 +7,7 @@ import pandas as pd
 import ast, random
 
 all_circuits = ["XNOR","XOR","NOR","OR","AND","NAND"]
+all_circuits = ["XNOR"]
 input_states = ["00", "01", "10", "11"]
 
 
@@ -34,8 +35,13 @@ def transform_data(fname,transform,channels,threshold,channel,region):
     elif transform is not None:
         raise ValueError("Transform {} not recognized.".format(transform))
     if threshold:
-        gate = FCT.ThresholdGate(threshold, [channel], region=region)
-        sample = sample.gate(gate)
+        try:
+            gate = FCT.ThresholdGate(threshold, [channels[channel]], region=region)
+            sample = sample.gate(gate)
+        except:
+            print(fname)
+            print(sample.channel_names)
+            raise
     return sample
 
 
@@ -102,6 +108,7 @@ def sort_strains_into_histograms(data, bin_endpoints):
         for sample, channels, metadata in samp_list:
             ip = metadata["input_state"]
             metadata.pop("input_state")
+            metadata=str(metadata)
             pts = get_log_values(sample.data[channels["GFP"]].values.transpose())
             hist = np.asarray(bin_data(pts, bin_endpoints))
             if metadata not in circuits:
@@ -114,7 +121,7 @@ def get_results(hists, bin_centers, num_choices):
     new_circuits = {}
     for metadata, vals in hists.items():
         md = []
-        for m in metadata:
+        for m in ast.literal_eval(metadata):
             if m[0] not in ["rep", "od"]:
                 md.append(m)
         md = tuple(md)
@@ -144,21 +151,17 @@ def get_results(hists, bin_centers, num_choices):
     return all_scores
 
 
-def main_tx(bin_endpoints=[np.log10(r) for r in range(250, 10250, 250)], num_choices=250, savefile=None):
-    cts = {}
-    bin_centers = get_bin_centers(bin_endpoints)
+def main_tx(ingest_file="transcriptic_april_fcsfiles_dan.csv",bin_endpoints=[np.log10(r) for r in range(250, 10250, 250)], num_choices=250, savefile=None):
+    output = {}
+    bin_centers = np.asarray(get_bin_centers(bin_endpoints))
     for circuit in all_circuits:
         print("Getting data for circuit {}....".format(circuit))
-        data = get_data_tx(circuit)
-        print("Initial sort....")
+        data = get_data_tx(circuit,ingest_file=ingest_file)
+        print("Initial sort for circuit {}....".format(circuit))
         h = sort_strains_into_histograms(data, bin_endpoints)
         print("Initial sort done.")
-        cts[circuit] = h
-    bin_centers = np.asarray(bin_centers)
-    output = {}
-    for circuit in all_circuits:
         print("Processing results for {}....".format(circuit))
-        results = get_results(cts[circuit], bin_centers, num_choices=num_choices)
+        results = get_results(h, bin_centers, num_choices=num_choices)
         print("Processing results done.")
         output[circuit] = {str(k) : r for k,r in results.items()}
     if not savefile:
