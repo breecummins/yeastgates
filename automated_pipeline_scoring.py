@@ -6,8 +6,7 @@ import numpy as np
 import pandas as pd
 import ast, random
 
-all_circuits = ["XNOR","XOR","NOR","OR","AND","NAND"]
-all_circuits = ["XNOR"]
+
 input_states = ["00", "01", "10", "11"]
 
 
@@ -45,7 +44,7 @@ def transform_data(fname,transform,channels,threshold,channel,region):
     return sample
 
 
-def get_data_tx(circuit,ingest_file="transcriptic_april_fcsfiles_dan.csv", prefix="~/sd2e-community", transform='hlog',threshold=5000,channel="FSC",region="above"):
+def get_data_tx(circuit,ingest_file="transcriptic_april_fcsfiles_dan.csv", prefix="~/sd2e-community", transform='hlog',threshold=4000,channel="FSC",region="above"):
     df = pd.read_csv(open(ingest_file))
     data = {}
     count = 0
@@ -120,11 +119,16 @@ def sort_strains_into_histograms(data, bin_endpoints):
 def get_results(hists, bin_centers, num_choices):
     new_circuits = {}
     for metadata, vals in hists.items():
-        md = []
-        for m in ast.literal_eval(metadata):
-            if m[0] not in ["rep", "od"]:
-                md.append(m)
-        md = tuple(md)
+        metadata = ast.literal_eval(metadata)
+        try:
+            metadata.pop("rep")
+        except:
+            pass
+        try:
+            metadata.pop("od")
+        except:
+            pass
+        md = tuple(metadata.items())
         if md not in new_circuits:
             new_circuits[md] = vals
         else:
@@ -142,33 +146,29 @@ def get_results(hists, bin_centers, num_choices):
             choice = [np.asarray(random.choice(ip[input_states[k]])) for k in range(4)]
             d = dict(zip(input_states, choice))
             scores = rank_noncst_tables(d, bin_centers)
-            if scores[0][1] == desiredtt:
-                truthtable_correct.append(scores[1][0] - scores[0][0])
-            else:
-                truthtable_incorrect.append(scores[1][0] - scores[0][0])
+            try:
+                if scores[0][1] == desiredtt:
+                    truthtable_correct.append(scores[1][0] - scores[0][0])
+                else:
+                    truthtable_incorrect.append(scores[1][0] - scores[0][0])
+            except:
+                print(md)
+                raise
         all_scores[md]['truthtable_incorrect'].extend(truthtable_incorrect)
         all_scores[md]['truthtable_correct'].extend(truthtable_correct)
     return all_scores
 
 
-def main_tx(ingest_file="transcriptic_april_fcsfiles_dan.csv",bin_endpoints=[np.log10(r) for r in range(250, 10250, 250)], num_choices=250, savefile=None):
-    output = {}
+def main_tx(circuit,ingest_file="transcriptic_april_fcsfiles_dan.csv",bin_endpoints=[np.log10(r) for r in range(250, 10250, 250)], num_choices=250):
     bin_centers = np.asarray(get_bin_centers(bin_endpoints))
-    for circuit in all_circuits:
-        print("Getting data for circuit {}....".format(circuit))
-        data = get_data_tx(circuit,ingest_file=ingest_file)
-        print("Initial sort for circuit {}....".format(circuit))
-        h = sort_strains_into_histograms(data, bin_endpoints)
-        print("Initial sort done.")
-        print("Processing results for {}....".format(circuit))
-        results = get_results(h, bin_centers, num_choices=num_choices)
-        print("Processing results done.")
-        output[circuit] = {str(k) : r for k,r in results.items()}
-    if not savefile:
-        savefile = "temp_output.json"
-    json.dump(output, open(savefile, "w"))
+    print("Getting data for circuit {}....".format(circuit))
+    data = get_data_tx(circuit,ingest_file=ingest_file)
+    print("Initial sort for circuit {}....".format(circuit))
+    h = sort_strains_into_histograms(data, bin_endpoints)
+    print("Initial sort done.")
+    print("Processing results for {}....".format(circuit))
+    results = get_results(h, bin_centers, num_choices=num_choices)
+    print("Processing results done.")
+    savefile = "temp_output_{}.json".format(circuit)
+    json.dump({str(k) : r for k,r in results.items()}, open(savefile, "w"))
     print("Output saved to {}".format(savefile))
-    return output
-
-if __name__ == "__main__":
-    main_tx()
