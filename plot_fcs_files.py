@@ -1,7 +1,7 @@
 import pylab
 import numpy as np
 import process_fcs_files as pff
-import ast
+import ast, random
 
 
 def plot_2D_scatter(data, media = "",titlestr="",xchannel="GFP", ychannel="FSC", xlim=None, ylim=None, savefile=None):
@@ -65,7 +65,7 @@ def plot_data_against_gated(circuit,mongo=False, ingest_file="transcriptic_april
 #     return data
 
     
-def plot_hist(data,xchannel="FSC",xlim=[6500,12000],ylim=[0,1400],bins=200,color="blue",pool=False,savefile=False):
+def plot_hist(data,xchannel="FSC",xlim=None,ylim=None,bins=200,color="blue",savefile=False):
     '''
 
     :param data: the output of get_data() of process_fcs_files
@@ -77,31 +77,23 @@ def plot_hist(data,xchannel="FSC",xlim=[6500,12000],ylim=[0,1400],bins=200,color
     :return:
     '''
     for t,d in data.items():
-        media = set([])
-        for sample,channels,metadata in d:
-            sample.plot([channels[xchannel]], bins=bins,color=color)
-            media.add(metadata['media'])
-        if not pool:
-            title = media[0] if len(media) == 1 else t
-            pylab.title(title)
-            pylab.xlabel(xchannel)
-            pylab.ylabel(ychannel)
-            pylab.xlim(xlim)
-            pylab.ylim(ylim)
-            if savefile:
-                pylab.savefig(savefile)
-            pylab.show()
-    if pool:
-        title = t
+        med_list=set([])
+        for sample, channels, metadata in d:
+            if (not media) or metadata['media'] == media:
+                sample.plot([channels[xchannel]], bins=bins,color=color)
+                med_list.add(metadata['media'])
+        title = titlestr+ " " + t + " "+ " & ".join(med_list)
         pylab.title(title)
         pylab.xlabel(xchannel)
         pylab.ylabel(ychannel)
-        pylab.xlim(xlim)
-        pylab.ylim(ylim)
+        if xlim:
+            pylab.xlim(xlim)
+        if ylim:
+            pylab.ylim(ylim)
         if savefile:
             pylab.savefig(savefile)
         pylab.show()
-
+        
 
 def plot_hist_from_point_cloud(ptclouds,xlabel="",title="",bin_endpts=None,xlim=None,ylim=None,colors=["blue"],bins=20,savefile=False,normed=0):
     # ptclouds is list of np.arrays or lists, each for a different input condition
@@ -123,19 +115,44 @@ def plot_hist_from_point_cloud(ptclouds,xlabel="",title="",bin_endpts=None,xlim=
     pylab.show()
 
 
-def plot_bar(x,heights,xlabel="",ylabel="counts",title="",xlim=[0,0.1],ylim=[0,50],colors=["blue"],savefile=False):
-    for h,c in zip(heights,colors):
-        pylab.hist(x, len(x), weights=h/sum(h), alpha=0.5, color=c)
-    pylab.title(title)
-    pylab.xlabel(xlabel)
-    pylab.ylabel(ylabel)
-    if xlim:
-        pylab.xlim(xlim)
-    if ylim:
-        pylab.ylim(ylim)
-    if savefile:
-        pylab.savefig(savefile)
-    pylab.show()
+def make_hists(data,bin_vals,desiredtt,rep,circuit):
+    plt.figure()
+    plt.title("{}, {}".format(circuit,rep))
+    plt.xlabel("GFP")
+    plt.ylabel("normalized counts")
+    for k,hist in data.items():
+        if desiredtt[k] == 1:
+            c = 'blue'
+        else:
+            c = 'red'
+        H1 = hist / float(sum(hist))
+        mpl.rc('xtick', labelsize=14) 
+        mpl.rc('ytick', labelsize=14)         
+        plt.hist(bin_vals,len(bin_vals),weights=H1,alpha=0.5,color=c)
+    plt.show()
+
+
+def plot_example_circuit(circuit,hists,bin_endpoints,xlabel="",ylabel="normalized counts",num_examples=1,xlim=None,ylim=None,savefile=False):
+    desiredtt = pff.desired_truth_tables[circuit]
+    colors = ["b"  if desiredtt[ip] == 0  else "r" for ip in pff.input_states]
+    bin_centers = pff.get_bin_centers(bin_endpoints)
+    combined_hists = pff.combine_over_rep_od(hists)
+    for md,ipdict in combined_hists.items():
+        for _ in range(num_examples):
+            example = [np.asarray(random.choice(ipdict[pff.input_states[k]])) for k in range(4)]
+            pylab.figure()
+            pylab.title(str(md))
+            pylab.xlabel(xlabel)
+            pylab.ylabel(ylabel)
+            for h,c in zip(example,colors):
+                pylab.hist(bin_centers, len(bin_centers), weights=h/sum(h), alpha=0.5, color=c)
+            if xlim:
+                pylab.xlim(xlim)
+            if ylim:
+                pylab.ylim(ylim)
+            if savefile:
+                pylab.savefig(savefile)
+            pylab.show()
     
     
 def sep_hists(results,title,scale=10,bins=20,M=None):
@@ -193,7 +210,7 @@ def plot_summaries(results,ylim=(0,0.04)):
         m = ast.literal_eval(m)
         circuit = pff.getcircuit(m[1][1])
         media = m[0][1]
-        if media == "Yeast_Extract_Peptone_Adenine_Dextrose" or media == "culture_media_4":
+        if media == "Yeast_Extract_Peptone_Adenine_Dextrose" or media == "culture_media_4" or media == "YPAD":
             media = "YEPD"
         elif media == "Synthetic_Complete" or media == "culture_media_5" or media == "culture_media_1":
             media = "SC"
@@ -238,7 +255,7 @@ def plot_by_media(circuit,results,ylim=None):
 
     for m,scores in results.items():
         media = m[0][1]
-        if media == "Yeast_Extract_Peptone_Adenine_Dextrose" or media == "culture_media_4":
+        if media == "Yeast_Extract_Peptone_Adenine_Dextrose" or media == "culture_media_4" or media == "YPAD":
             media = "YEPD"
         elif media == "Synthetic_Complete" or media == "culture_media_5" or media == "culture_media_1": # media 5 mistake in April data
             media = "SC"
