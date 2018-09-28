@@ -1,10 +1,9 @@
-from rank_order_truth_tables import *
+from rank_order_truth_tables import rank_noncst_tables
 from math import isnan
 import numpy as np
 import ast,time,sys,json
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-# get_ipython().run_line_magic('matplotlib', 'inline')
 
 
 desired_truth_tables = {

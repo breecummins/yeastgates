@@ -4,7 +4,7 @@ import process_fcs_files as pff
 import ast
 
 
-def plot_2D_scatter(data, titlestr="",xchannel="GFP", ychannel="FSC", xlim=[-0.01, 7], ylim=[-0.01, 7], pool=False, savefile=False):
+def plot_2D_scatter(data, media = "",titlestr="",xchannel="GFP", ychannel="FSC", xlim=None, ylim=None, savefile=None):
     '''
 
     :param data: the output of get_data() of process_fcs_files
@@ -12,23 +12,22 @@ def plot_2D_scatter(data, titlestr="",xchannel="GFP", ychannel="FSC", xlim=[-0.0
     :param ychannel: one of ["GFP","FSC","Sytox"]
     :param xlim: plot limits
     :param ylim: plot limits
-    :param pool: pool data across media conditions
     :return:
     '''
     for t, d in data.items():
-        media = set([])
+        med_list=set([])
         for sample, channels, metadata in d:
-#             # alter plotting for log10
-#             vals = sample[channels[xchannel], channels[ychannel]].values
-#             pylab.scatter(vals[:,0],vals[:,1])
-            sample.plot([channels[xchannel], channels[ychannel]], cmap='hot')
-            media.add(metadata['media'])
-        title = titlestr+ " " + t + " "+ str(media)
+            if (not media) or metadata['media'] == media:
+                sample.plot([channels[xchannel], channels[ychannel]], cmap='hot')
+                med_list.add(metadata['media'])
+        title = titlestr+ " " + t + " "+ " & ".join(med_list)
         pylab.title(title)
         pylab.xlabel(xchannel)
         pylab.ylabel(ychannel)
-        pylab.xlim(xlim)
-        pylab.ylim(ylim)
+        if xlim:
+            pylab.xlim(xlim)
+        if ylim:
+            pylab.ylim(ylim)
         if savefile:
             pylab.savefig(savefile)
         pylab.show()
@@ -185,7 +184,6 @@ def make_hist(hist,bin_vals,normed=True,xlim=None,ylim=None,title="",xlabel="",y
 def plot_summaries(results,ylim=(0,0.04)):
     # results is the output of process_fcs_files.get_results 
     circuits = ["OR","NOR","AND","NAND","XOR","XNOR"]
-    input_states = ["00","01","10","11"]
     SC = {}
     Sorb = {}
     Eth = {}
@@ -226,4 +224,34 @@ def plot_summaries(results,ylim=(0,0.04)):
         pylab.show()
         
 
+def plot_by_media(circuit,results,ylim=None):
+    all_media = ["SC","Sorb","YEPD","Eth"]
+    fig=pylab.figure()
+    pylab.title(circuit)
+    ax = pylab.gca()
+    pylab.xlim((-0.5,3.5))
+    ax.set_xticks(range(4))
+    ax.set_xticklabels(all_media, fontsize=18)
+    if ylim:
+        pylab.ylim(ylim)
+    pylab.ylabel("separation score")
+
+    for m,scores in results.items():
+        media = m[0][1]
+        if media == "Yeast_Extract_Peptone_Adenine_Dextrose" or media == "culture_media_4":
+            media = "YEPD"
+        elif media == "Synthetic_Complete" or media == "culture_media_5" or media == "culture_media_1": # media 5 mistake in April data
+            media = "SC"
+        elif "thanol" in media or media == "culture_media_2":
+            media = "Eth"
+        elif "orbitol" in media or media == "culture_media_3":
+            media = "Sorb"
+        else:
+            raise ValueError("Media {} is not recognized.".format(media))
+        ind = all_media.index(media)
+        vals = scores["truthtable_incorrect"]
+        pylab.plot([ind]*len(vals),vals, color = "r",marker="o",linestyle="")
+        vals = scores["truthtable_correct"]
+        pylab.plot([ind]*len(vals),vals, color = "g",marker="o",linestyle="")
+    pylab.show()
 
