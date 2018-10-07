@@ -1,0 +1,6 @@
+IPTG : IPTG : E
+Ara : Ara : E
+IcaR : IPTG : E
+PhlF : Ara : E
+YFP : (~IcaR)(~PhlF) : E
+D : (D)(YFP) : E

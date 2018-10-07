@@ -145,4 +145,3 @@ def get_one_change_params(logic,out="GFP",topvalout=1,print_output=True):
             one_change_hexes.update({s : hlist})
     return summary,params,one_change_hexes
 
-

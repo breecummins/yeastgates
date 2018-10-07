@@ -29,8 +29,8 @@ def get_matching_truthtables(parametergraph,truthtables,N):
     return params
 
 def results(net_str,circuit,truthtables,displaygraph=False):
-    datetime = subprocess.check_output(['date +%Y_%m_%d_%H_%M_%S'], shell=True).decode(sys.stdout.encoding).strip()
     # truth tables is list of dictionaries
+    datetime = subprocess.check_output(['date +%Y_%m_%d_%H_%M_%S'], shell=True).decode(sys.stdout.encoding).strip()
     network = DSGRN.Network()
     network.assign(net_str)
     if displaygraph:
