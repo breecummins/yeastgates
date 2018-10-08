@@ -64,7 +64,7 @@ def do_all_queries(dbname, in1, topval1, in2, topval2, out, topvalout, print_out
     names = [database.names[k] for k in range(database.D)]
     for n in [in1,in2,out]:
         if n not in names:
-            raise ValueError("{} is not a variable in the network for {}".format(n,dbname))    
+            raise ValueError("{} is not a variable in the network for {}".format(n,dbname))
     truthtables = truth_table_constructor_2in(in1, topval1, in2, topval2, out, topvalout)
     all_matches = []
     lengths = []
