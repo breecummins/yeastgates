@@ -1,3 +1,25 @@
+# The MIT License (MIT)
+#
+# Copyright (c) 2018 Bree Cummins
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
 import DSGRN,itertools,json,os,contextlib
 
 def truth_table_constructor_2in(in1, topval1, in2, topval2, out, topvalout):
@@ -50,6 +72,9 @@ def truth_table_query(database,bounds):
 
 
 def format_truth_table(tt,in1,in2,out):
+    '''
+    Makes the truth table look nice.
+    '''
     l = []
     for t in tt:
         i1 = str(int(t[in1][0] > 0))
@@ -60,6 +85,21 @@ def format_truth_table(tt,in1,in2,out):
 
 
 def do_all_queries(dbname, in1, topval1, in2, topval2, out, topvalout, print_output=False):
+    '''
+    Take a database and record the parameters for each of the possible 16 truth tables for two inputs.
+
+    :param dbname: String with the file name of a precomputed database via mpiexec Signatures.
+    :param in1: String with the name of the first input node.
+    :param topval1: The highest state (integer) that the input node can achieve.
+    :param in2: Name of second input.
+    :param topval2: Highest value of the second input.
+    :param out: String with the name of the output variable.
+    :param topvalout: Highest value of the output variable.
+    :param print_output: True or False. Print the output for each truth table in pretty format
+
+    :return: File names where the results are deposited. The keys to each json dictionary are
+             integers that link truth tables in one file to parameters in the second file.
+    '''
     database = DSGRN.Database(dbname)
     names = [database.names[k] for k in range(database.D)]
     for n in [in1,in2,out]:
