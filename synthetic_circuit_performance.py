@@ -65,7 +65,15 @@ def printfile(fname):
     N = len(fn) // 2 
     print('/'.join(fn[:N])+'/\n'+'/'.join(fn[N:]))
 
-def parseoutput(f,underflow_skip=2,truncate_ind=1):    
+def parseoutput(f,underflow_skip=2,truncate_ind=1):
+    '''
+    This parses a specific data product from TASBE which is likely obsolete.
+
+    :param f: file object
+    :param underflow_skip: skip this number of bins at the beginning
+    :param truncate_ind: skip this number of bins at the end
+    :return: dictionary of specific metadata each associated to a histogram and the representative bin values
+    '''
     out = {}
     f0 = f.readline()
     l = f0.split('geo_mean,')
@@ -108,6 +116,18 @@ def make_hists(data,bin_vals,desiredtt,rep):
 
 
 def do_all(fname, good_sep_param, print_reps=True,print_summary=True,make_figs=True,gates=["OR","NOR","AND","NAND","XOR","XNOR"],top_tables=7):
+    '''
+    This function is obsolete, both because of parsing and because now I am mixing across replicates.
+
+    :param fname: the file to parse
+    :param good_sep_param: an arbitrary choice of a good separation score
+    :param print_reps: print info as we go
+    :param print_summary: print info as we go
+    :param make_figs: make figures as we go
+    :param gates: any sublist of the default argument
+    :param top_tables: integer between 0 and 7: the number of truth tables to print results for
+    :return:
+    '''
     starttime=time.time()
     with open(fname,'r') as f:
         out, bin_vals = parseoutput(f)

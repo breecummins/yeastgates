@@ -34,6 +34,7 @@ input_states = ["00", "01", "10", "11"]
 
 
 def get_channels(lab_name):
+    # key to lab specific channels
     if "BIOFAB" in lab_name:
         GFP = "FL1-A"
         Sytox = "FL4-A"
@@ -48,6 +49,7 @@ def get_channels(lab_name):
 
 
 def transform_data(fname,transform,channels,threshold,channel,region):
+    #Transform and gate using flowcytometrytools
     sample = FCT.FCMeasurement(ID="temp", datafile=fname)
     if transform == 'hlog':
         # see FlowCytometryTools documentation
@@ -68,6 +70,7 @@ def transform_data(fname,transform,channels,threshold,channel,region):
 
 
 def get_data_tx(circuit,ingest_file="transcriptic_april_fcsfiles_dan.csv", prefix="~/sd2e-community", transform='hlog',threshold=4000,channel="FSC",region="above"):
+    # Parses transcriptic_april_fcsfiles_dan.csv exactly.
     df = pd.read_csv(open(ingest_file))
     data = {}
     count = 0
@@ -125,6 +128,7 @@ def get_log_values(values):
 
 
 def sort_strains_into_histograms(data, bin_endpoints):
+    # Data transformation and reorganization
     circuits = {}
     for key, samp_list in data.items():
         for sample, channels, metadata in samp_list:
@@ -140,6 +144,7 @@ def sort_strains_into_histograms(data, bin_endpoints):
 
 
 def get_results(hists, bin_centers, num_choices):
+    # Record separation scores and whether they are associated to the desired truth table or not.
     new_circuits = {}
     for metadata, vals in hists.items():
         metadata = ast.literal_eval(metadata)
@@ -183,6 +188,18 @@ def get_results(hists, bin_centers, num_choices):
 
 
 def main_tx(circuit,ingest_file="transcriptic_april_fcsfiles_dan.csv",bin_endpoints=[np.log10(r) for r in range(250, 10250, 250)], num_choices=250):
+    '''
+    This function works only for files in the format transcriptic_april_fcsfiles_dan.csv. There are also multiple
+    default arguments in this script that came from looking at data.
+
+    :param circuit: One of "AND", "NAND", "NOR", "OR", "XOR", "XNOR"
+    :param ingest_file: see default
+    :param bin_endpoints: the default is based on parameters chosen in the rest of the file
+    :param num_choices: how many circuits to measure based on pooling replicates and optical densities for a fixed
+    circuit, media condition, and experiment. The circuits are constructed by randomly picking each strain from the
+    pooled data (pick a 00 from all the 00 strains, pick 01 from all the 01 strains, etc)
+    :return: Separation scores and whether they are associated to the desired truth table are saved to a file.
+    '''
     bin_centers = np.asarray(get_bin_centers(bin_endpoints))
     print("Getting data for circuit {}....".format(circuit))
     data = get_data_tx(circuit,ingest_file=ingest_file)
